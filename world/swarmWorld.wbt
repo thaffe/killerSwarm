@@ -1,0 +1,59 @@
+#VRML_SIM V7.3.0 utf8
+WorldInfo {
+  info [
+    "Description"
+    "Author: first name last name <e-mail>"
+    "Date: DD MMM YYYY"
+  ]
+}
+Viewpoint {
+  orientation 0.964988 0.260934 0.0266743 5.53317
+  position -0.319918 0.968445 1.19138
+}
+Background {
+  skyColor [
+    0.4 0.7 1
+  ]
+}
+PointLight {
+  location 0 0.345 0
+}
+DEF FLOOR CheckeredFloor {
+  translation -1 0 -1
+  scale 2 2 2
+}
+DEF EPuck1 EPuck {
+  translation -0.213569 0 -0.849736
+  controller "EPuckController"
+}
+DEF EPuck2 EPuck {
+  translation 0.588907 0 0.490004
+  controller "EPuckController"
+}
+DEF EPuck3 EPuck {
+  translation 0.363648 0 0.448966
+  controller "EPuckController"
+}
+DEF EPuck4 EPuck {
+  translation -0.181519 0 -0.24729
+  controller "EPuckController"
+}
+DEF EPuck5 EPuck {
+  translation 0.40766 0 0.703097
+  controller "EPuckController"
+}
+DEF EPuck6 EPuck {
+  translation 0.50766 0 0.803097
+  controller "EPuckController"
+}
+DEF EPuck7 EPuck {
+  translation 0.70766 0 1.0031
+  controller "EPuckController"
+}
+DEF EPuck8 EPuck {
+  translation 0.60766 0 0.903097
+  controller "EPuckController"
+}
+Supervisor {
+  controller "Supervisor"
+}
