@@ -7,8 +7,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation 0.964988 0.260934 0.0266743 5.53317
-  position -0.319918 0.968445 1.19138
+  orientation 0.965845 0.257641 0.02764 5.52352
+  position -0.557195 1.91875 2.19786
 }
 Background {
   skyColor [
@@ -18,40 +18,41 @@ Background {
 PointLight {
   location 0 0.345 0
 }
-DEF FLOOR CheckeredFloor {
-  translation -1 0 -1
-  scale 2 2 2
+SquareArena {
+  planSize 2 2
+  wallXTranslation 1 0.05 0
+  wallSize 0.01 0.1 2
 }
 DEF EPuck1 EPuck {
-  translation -0.213569 0 -0.849736
+  translation -0.891617 0 0.917064
   controller "EPuckController"
 }
 DEF EPuck2 EPuck {
-  translation 0.588907 0 0.490004
+  translation -0.665317 0 0.288441
   controller "EPuckController"
 }
 DEF EPuck3 EPuck {
-  translation 0.363648 0 0.448966
+  translation -0.738944 0 -0.564543
   controller "EPuckController"
 }
 DEF EPuck4 EPuck {
-  translation -0.181519 0 -0.24729
+  translation 0.276091 0 -0.0533626
   controller "EPuckController"
 }
 DEF EPuck5 EPuck {
-  translation 0.40766 0 0.703097
+  translation 0.337152 0 -0.495985
   controller "EPuckController"
 }
 DEF EPuck6 EPuck {
-  translation 0.50766 0 0.803097
+  translation -0.852758 0 0.691072
   controller "EPuckController"
 }
 DEF EPuck7 EPuck {
-  translation 0.70766 0 1.0031
+  translation 0.123582 0 0.151176
   controller "EPuckController"
 }
 DEF EPuck8 EPuck {
-  translation 0.60766 0 0.903097
+  translation 0.383052 0 0.140619
   controller "EPuckController"
 }
 Supervisor {
