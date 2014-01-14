@@ -2,8 +2,8 @@ import com.cyberbotics.webots.controller.Field;
 import com.cyberbotics.webots.controller.Node;
 
 public class Supervisor extends com.cyberbotics.webots.controller.Supervisor {
-    private static final int ROBOTS = 8;
-    private static final double BOARD_DIM = 2;
+    private static final int ROBOTS = 1;
+    private static final double BOARD_DIM = 1;
 
     public Supervisor() {
 
