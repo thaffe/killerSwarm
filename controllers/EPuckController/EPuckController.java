@@ -53,14 +53,14 @@ public class EPuckController extends DifferentialWheels {
     private void avoidObjects(){
         double left = pSensorL.getValue() + pSensorFL.getValue();
         double right = pSensorR.getValue() + pSensorFR.getValue();
-        if(left > 300 || right > 300){
-            if(left > right && lSpeed != -300){
-                lSpeed = 1000;
-                rSpeed = -300;
-            }
-            else if(rSpeed != -300){
-                lSpeed = -300;
+        if(left > 400 || right > 400){
+            if(left > right && rSpeed != -300){
                 rSpeed = 1000;
+                lSpeed = -300;
+            }
+            else if(lSpeed != -300){
+                rSpeed = -300;
+                lSpeed = 1000;
             }
 
         }
