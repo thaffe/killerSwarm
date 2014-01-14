@@ -14,8 +14,8 @@ public class EPuckController extends DifferentialWheels {
     private DistanceSensor pSensorL, pSensorFL, pSensorFR, pSensorR;
 
     private double rSpeed, lSpeed;
-    private double rx1 = 250, rx2 = 250, rx3 = 250, rx4 = 250;
-    private double lx1 = 250, lx2 = 250, lx3 = 250, lx4 = 250;
+    private double rx1 = 0.3, rx2 = 0.3, rx3 = 0.3, rx4 = 0.3;
+    private double lx1 = 0.3, lx2 = 0.3, lx3 = 0.3, lx4 = 0.3;
 
     private int[] image;
     private float[] rangeImage;
@@ -23,15 +23,15 @@ public class EPuckController extends DifferentialWheels {
     public EPuckController() {
         super();
         this.camera = this.getCamera("camera");
-        this.pSensorL = this.getDistanceSensor("ps6");
-        this.pSensorFL = this.getDistanceSensor("ps7");
-        this.pSensorFR = this.getDistanceSensor("ps0");
-        this.pSensorR = this.getDistanceSensor("ps1");
-        this.pSensorFL.enable(16);
-        this.pSensorL.enable(16);
-        this.pSensorR.enable(16);
-        this.pSensorFR.enable(16);
-        this.camera.enable(16);
+        this.pSensorL = this.getDistanceSensor("ps1");
+        this.pSensorFL = this.getDistanceSensor("ps2");
+        this.pSensorFR = this.getDistanceSensor("ps3");
+        this.pSensorR = this.getDistanceSensor("ps4");
+        this.pSensorFL.enable(64);
+        this.pSensorL.enable(64);
+        this.pSensorR.enable(64);
+        this.pSensorFR.enable(64);
+        this.camera.enable(64);
     }
 
     public static void main(String[] args) {
@@ -41,7 +41,7 @@ public class EPuckController extends DifferentialWheels {
 
     public void run() {
         this.setSpeed(100, -100);
-        while (step(16) != -1) {
+        while (step(64) != -1) {
             this.rangeImage = this.camera.getRangeImage();
             this.image = this.camera.getImage();
 
@@ -51,26 +51,8 @@ public class EPuckController extends DifferentialWheels {
     }
 
     private void avoidObjects(){
-        double left = pSensorL.getValue() + pSensorFL.getValue();
-        double right = pSensorR.getValue() + pSensorFR.getValue();
-        if(left > 300 || right > 300){
-            if(left > right && lSpeed != -300){
-                lSpeed = 1000;
-                rSpeed = -300;
-            }
-            else if(rSpeed != -300){
-                lSpeed = -300;
-                rSpeed = 1000;
-            }
-
-        }
-        else{
-            lSpeed = 1000;
-            rSpeed = 1000;
-        }
-
-        //rSpeed = rx1 / pSensorL.getValue() + rx2 / pSensorFL.getValue() + rx3 / pSensorFR.getValue() + rx4 / pSensorR.getValue();
-        //lSpeed = lx1 / pSensorL.getValue() + lx2 / pSensorFL.getValue() + lx3 / pSensorFR.getValue() + lx4 / pSensorR.getValue();
+        rSpeed = rx1 * pSensorL.getValue() + rx2 * pSensorFL.getValue() + rx3 * pSensorFR.getValue() + rx4 * pSensorR.getValue();
+        lSpeed = lx1 * pSensorL.getValue() + lx2 * pSensorFL.getValue() + lx3 * pSensorFR.getValue() + lx4 * pSensorR.getValue();
      }
 
     private void wander(){

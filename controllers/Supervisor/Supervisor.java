@@ -8,14 +8,7 @@ public class Supervisor extends com.cyberbotics.webots.controller.Supervisor {
     public Supervisor() {
 
         super();
-        for (int i = 1; i <= ROBOTS; i++) {
-            Node node = getFromDef("EPuck"+i);
-            Field field = node.getField("translation");
-            double x = Math.random() * BOARD_DIM - BOARD_DIM/2.0,
-                    y = Math.random() * BOARD_DIM - BOARD_DIM/2.0;
-            field.setSFVec3f(new double[]{x, 0, y});
 
-        }
     }
 
     public static void main(String[] args) {
@@ -23,7 +16,15 @@ public class Supervisor extends com.cyberbotics.webots.controller.Supervisor {
         controller.run();
     }
 
-    public void run(){
+    public void run() {
+        for (int i = 1; i <= ROBOTS; i++) {
+            Node node = getFromDef("EPuck" + i);
+            Field field = node.getField("translation");
+            double x = Math.random() * BOARD_DIM - BOARD_DIM / 2.0,
+                    y = Math.random() * BOARD_DIM - BOARD_DIM / 2.0;
+            field.setSFVec3f(new double[]{x, 0, y});
+
+        }
         while (step(64) != -1) {
 
             // Read the sensors:
