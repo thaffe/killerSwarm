@@ -1,6 +1,7 @@
+import com.cyberbotics.webots.controller.*;
 import com.cyberbotics.webots.controller.Camera;
-import com.cyberbotics.webots.controller.DifferentialWheels;
-import com.cyberbotics.webots.controller.DistanceSensor;
+
+import java.util.ArrayList;
 
 public class EPuckController extends DifferentialWheels {
     private final static int DIST_SENSOR_FL = 6, DIST_SENSOR_FFL = 7, DIST_SENSOR_L = 5,
@@ -14,6 +15,9 @@ public class EPuckController extends DifferentialWheels {
     private float[] rangeImage;
     private DistanceSensor[] distSensors;
     private double[] distValues;
+    private Emitter emitter;
+    private Receiver receiver;
+    private ArrayList<Square> map;
 
     public EPuckController() {
         super();
@@ -25,6 +29,13 @@ public class EPuckController extends DifferentialWheels {
         }
         this.camera = this.getCamera("camera");
         this.camera.enable(TIME_STEP);
+
+        this.receiver = this.getReceiver("receiver");
+        this.receiver.enable(TIME_STEP);
+        this.emitter = this.getEmitter("emitter");
+
+        this.map = new ArrayList<Square>();
+
     }
 
     public static void main(String[] args) {
@@ -43,6 +54,8 @@ public class EPuckController extends DifferentialWheels {
             this.image = this.camera.getImage();
 
             this.avoidObjects();
+            this.buildMaps();
+            this.explore();
             this.setSpeed(lSpeed, rSpeed);
         }
     }
@@ -52,24 +65,21 @@ public class EPuckController extends DifferentialWheels {
         double right = distValues[DIST_SENSOR_FR] + distValues[DIST_SENSOR_FFR];
 
         if (left > DIST_THRESHOLD || right > DIST_THRESHOLD) {
-            if(left > right && lSpeed > 0)
+            if (left > right && lSpeed > 0)
                 turn(true);
-            else if(rSpeed > 0)
+            else if (rSpeed > 0)
                 turn(false);
         } else {
             drive(true);
         }
     }
 
-    private void wander() {
+    private void buildMaps() {
 
+        this.getSp
     }
 
     private void explore() {
-
-    }
-
-    private void buildMaps() {
 
     }
 
@@ -89,8 +99,7 @@ public class EPuckController extends DifferentialWheels {
 
     }
 
-    private void setLed(int red, int green, int blue) {
-    }
+
 
     private void turn(boolean right) {
         this.lSpeed = right ? MAX_SPEED : -MAX_SPEED * 0.5;
@@ -107,5 +116,25 @@ public class EPuckController extends DifferentialWheels {
         this.rSpeed = 0;
     }
 
+    enum SquareContent{
+        EMPTY,WALL,OBJECT,NAN;
+    }
+    class Square{
+        public Square(){
+
+        }
+
+        public Square(SquareContent content, int color){
+            this.content = content;
+            this.red = Camera.pixelGetRed(color);
+            this.green = Camera.pixelGetGreen(color);
+            this.blue = Camera.pixelGetBlue(color);
+        }
+        public SquareContent content;
+        public int red;
+        public int green;
+        public int blue;
+
+    }
 
 }
