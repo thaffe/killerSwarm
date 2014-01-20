@@ -1,5 +1,6 @@
 import Neuron
 
+
 class NeuralNetwork:
 
     def __init__(self, inputCount, invisibleLayers = 0, outputCount = 1, weights = 0, min = -1, max = 1):

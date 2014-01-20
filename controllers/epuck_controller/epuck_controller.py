@@ -1,7 +1,9 @@
 import math
 import random
+import sys
+import neural.NeuralNetwork as NN
+import neural.Neuron
 from epuck_basic import EpuckBasic
-
 
 class cmd():
     #commands
@@ -61,6 +63,7 @@ class EpuckController(EpuckBasic):
         self.mode = self.search
         self.counter = 0
         self.stagnation_count = 100 + 300 * random.random()
+        self.searhNN = NN.NeuralNetwork(8,0,2)
 
     def update_sensors(self):
         self.dist_val = [((0 if math.isnan(x) else x) / 4096) for x in self.get_proximities()]
@@ -105,6 +108,7 @@ class EpuckController(EpuckBasic):
         self.last_data = [self.dist_val[0], self.dist_val[7]]
 
     def search(self):
+        self.searhNN.update();
         c = self.get_light_cmd()
         return c if c != cmd.unknown else self.get_dist_cmd()
 
