@@ -53,29 +53,27 @@ class EpuckController(EpuckBasic):
                  tfile="redman4"):
         EpuckBasic.__init__(self)
         self.basic_setup() # defined for EpuckBasic
-        self.sv = []
-        self.lv = []
+        self.dist_val = []
+        self.light_val = []
         self.last_data = None
         self.current_cmd = cmd.stop
         self.suggested_cmd = cmd.stop
         self.mode = self.search
         self.counter = 0
-        self.acc = self.getAccelerometer("accelerometer")
-        self.acc.enable(self.timestep)
-        self.eSpeed = 0
+        self.stagnation_count = 100 + 300 * random.random()
 
     def update_sensors(self):
-        self.sv = [((0 if math.isnan(x) else x) / 4096) for x in self.get_proximities()]
-        self.lv = [((0 if math.isnan(x) else x) / 4096) for x in self.get_lights()]
+        self.dist_val = [((0 if math.isnan(x) else x) / 4096) for x in self.get_proximities()]
+        self.light_val = [((0 if math.isnan(x) else x) / 4096) for x in self.get_lights()]
         # fix to get lights in the same order as proximity
         lights_order = [4, 5, 6, 7, 0, 1, 2, 3]
-        self.lv = [self.lv[x] for x in lights_order]
+        self.light_val = [self.light_val[x] for x in lights_order]
 
     def run(self):
         while True:
             self.update_sensors()
             self.check_mode()
-            self.set_leds(1)
+            # self.set_leds(1)
             self.suggested_cmd = self.mode()
 
             self.do_suggested()
@@ -87,25 +85,24 @@ class EpuckController(EpuckBasic):
         #itererer over distanse og sjekker om man er intil et objekt,
         # sjekker ogsaa om det lyser fra objektet
         for i in range(0,self.num_dist_sensors):
-            if self.sv[i] > self.dist_threshold and self.lv[i] > self.light_threshold :
+            if self.dist_val[i] > self.dist_threshold and self.light_val[i] > self.light_threshold :
                 self.mode = self.retrieval
                 break
 
         #sjekker om det har skjedd none endringer de siste rundene
         if self.last_data and self.mode == self.retrieval:
-            fl = self.sv[0] - self.last_data[0]
-            fr = self.sv[7] - self.last_data[1]
+            fl = self.dist_val[0] - self.last_data[0]
+            fr = self.dist_val[7] - self.last_data[1]
 
-            # if (abs(self.last_data[0][0] - self.sv[0]) < self.stagnation_threshold
-            #      or abs(self.last_data[1][0] - self.lv[0]) < self.stagnation_threshold):
-
-            if (self.sv[7] > self.dist_threshold and self.sv[0] > self.dist_threshold) and (self.sv[5] < self.dist_threshold or self.sv[2] < self.dist_threshold):
+            if self.dist_val[2] + self.dist_val[5] < self.dist_threshold :
                 self.counter += 1
-                if self.counter > 150:
-                    print ("Stagnation",self.counter)
+                if self.counter > self.stagnation_count:
+                    print("Staggnation:",self.counter)
+                    self.stagnation_count = 100+300*random.random()
                     self.counter = 0
                     self.mode = self.stagnation
-        self.last_data = [self.sv[0], self.sv[7]]
+
+        self.last_data = [self.dist_val[0], self.dist_val[7]]
 
     def search(self):
         c = self.get_light_cmd()
@@ -117,14 +114,14 @@ class EpuckController(EpuckBasic):
 
     def stagnation(self):
         self.backward()
-        self.turn_left()
-        self.forward()
+        self.turn_left() if random.random() < 0.5 else self.turn_right()
+        self.forward(1,2)
         self.mode = self.search
         return cmd.forward
 
     def get_light_cmd(self):
-        left = sum(self.lv[:4])
-        right = sum(self.lv[4:])
+        left = sum(self.light_val[:4])
+        right = sum(self.light_val[4:])
         diff = left - right
         if abs(diff) > self.light_threshold:
             if left < right:
@@ -136,8 +133,8 @@ class EpuckController(EpuckBasic):
 
     def get_dist_cmd(self):
         #Hvis man ikke har registrert nok lys kjores en unngaa vegger ting istede
-        left = sum(self.sv[6:8])
-        right = sum(self.sv[0:2])
+        left = sum(self.dist_val[6:8])
+        right = sum(self.dist_val[0:2])
         if left > self.dist_threshold or right > self.dist_threshold:
             if left > right and not self.is_last_cmd(cmd.turn_left):
                 return cmd.turn_right
@@ -170,17 +167,6 @@ class EpuckController(EpuckBasic):
     def is_last_cmd(self, command):
         return command == self.current_cmd
 
-    #side er hvilken side av bildet
-    #side = bottom er midten bunnen, left = midten left, right = midten right
-    def get_pixel(self, side="bottom"):
-        w = self.camera.getWidth()
-        h = self.camera.getHeight()
-        if side == "bottom":
-            return self.image.getpixel((w / 2, h - 1))
-        elif side == "left":
-            return self.image.getpixel((0, h / 2))
-        elif side == "right":
-            return self.image.getpixel((w - 1, h / 2))
 
 
 controller = EpuckController(tempo=1.0, band='gray')
