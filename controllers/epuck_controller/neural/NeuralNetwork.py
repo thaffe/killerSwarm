@@ -16,6 +16,9 @@ class NeuralNetwork:
 
 
     def update(self, inputs):
+        for i in range(len(inputs)):
+            self.inputs[i].output = inputs[i]
+            
         result = []
 
         #if self.invisibleLayers:
