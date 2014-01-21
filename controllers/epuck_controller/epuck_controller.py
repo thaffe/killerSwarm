@@ -1,16 +1,21 @@
 import math
 import random
+from controller import *
 import neural.NeuralNetwork as NN
-from epuck_basic import EpuckBasic
 
+#sensor names
 sensors = ["fmr", "fr", "r", "br", "bl", "l", "fl", "fml"]
 
 
-class EpuckController(EpuckBasic):
-    dist_threshold = 200
-    light_threshold = 0.1
-    stagnation_threshold = 0.001
+class EpuckController(DifferentialWheels):
+    #robots constants
+    num_dist_sensors = 8
+    num_light_sensors = 8
+    num_leds = 9
+    cam_update_rate = 3
+    max_speed = 1000
 
+    #Neural nets constants
     avoid_weight = 4
     food_weight = 0.5
     robot_weight = 3
@@ -20,18 +25,30 @@ class EpuckController(EpuckBasic):
     wander_frequence = 1.0/2000.0
 
     def __init__(self):
-        EpuckBasic.__init__(self)
-        self.basic_setup() # defined for EpuckBasic
+        DifferentialWheels.__init__(self)
+
+        self.timestep = int(self.getBasicTimeStep())
+        self.camera = self.getCamera('camera')
+        self.camera.enable(self.cam_update_rate*self.timestep)
+        self.leds = [self.getLED("led" + str(x)) for x in range(self.num_leds)]
+
+        self.speed = [0, 0]
+        self.wander = 0
 
         self.counter = 0
         self.neuralNet = NN.NeuralNetwork()
 
         for i in range(self.num_dist_sensors):
-            self.neuralNet.append(name="ds-" + sensors[i], post_update=self.dist_pre_update, data=self.dist_sensors[i])
+            sensor = self.getDistanceSensor("ps"+str(i))
+            sensor.enable(self.timestep)
+            self.neuralNet.append(name="ds-" + sensors[i], post_update=self.dist_pre_update,
+                                  data=sensor)
 
         for i in range(self.num_light_sensors):
+            sensor = self.getLightSensor("ls"+str(i))
+            sensor.enable(self.timestep)
             self.neuralNet.append(name="ls-" + sensors[i], post_update=self.light_pre_update,
-                                  data=self.light_sensors[i])
+                                  data=sensor)
 
         for i in range(8):
             self.neuralNet.append(name="c-" + str(i), post_update=self.cam_pre_update, data=i)
@@ -120,8 +137,6 @@ class EpuckController(EpuckBasic):
             "robot-r": self.robot_weight,
             "robot-found": 0
         }, post_update=self.wheel_post_update, data=1, always_update=True)
-        self.speed = [0, 0]
-        self.wander = 0
 
     def dist_pre_update(self, neuron):
         x = neuron.data.getValue()
@@ -176,15 +191,18 @@ class EpuckController(EpuckBasic):
         return
 
     def run(self):
-        self.set_leds(1)
         step_counter = 0
+        self.set_green_leds(1)
         while True:
             # self.update_sensors()
             self.update_cam += 1
             step_counter += 1
 
             self.neuralNet.update(step_counter)
-            self.set_wheel_speeds(max(-1,min(1 - 2*self.speed[0], 1)), max(-1,min(1 - 2*self.speed[1], 1)))
+            self.setSpeed(
+                self.max_speed*max(-1,min(1 - 2*self.speed[0], 1)),
+                self.max_speed*max(-1,min(1 - 2*self.speed[1], 1))
+            )
 
             if self.step(self.timestep) == -1: break
 
@@ -198,6 +216,12 @@ class EpuckController(EpuckBasic):
                     255 * 6) + math.floor(img[x + 1][y][1] / max(1, (img[x + 1][y][0] + img[x + 1][y][2]))) / (255 * 6)
 
         return greens
+    def set_green_leds(self, value):
+        self.leds[8].set(value)
+
+    def set_red_leds(self,value):
+        for i in range(0,7):
+            self.leds[i].set(value)
 
 
 controller = EpuckController()
