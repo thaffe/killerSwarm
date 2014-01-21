@@ -1,19 +1,19 @@
-import Neuron
+from Neuron import *
 
 
 class NeuralNetwork:
-
     def __init__(self):
         self.neurons = {}
 
-    def append(self, name, weights=[], pre_update=None, post_update=None, always_update=False):
-        inputs = []
-        for weight in weights:
-            inputs.append(Neuron.Input(self.neurons[weight.neuron_id], weight.value))
+    def append(self, name, weights=[], pre_update=None, post_update=None, always_update=False, data=None):
+        inputs = {}
+        for key in weights:
+            inputs[key] = Input(self.neurons[key], weights[key])
+        # inputs = [ Input(self.neurons[key], weights[key]) for key in weights ]
+        self.neurons[name] = Neuron(name, inputs, pre_update, post_update, always_update, data)
 
-        self.neurons[name] = Neuron.Neuron(inputs, pre_update, post_update, always_update)
-
-    def update(self, timestep):
+    def update(self, step_conuter):
         for neuron in self.neurons:
-            if neuron.timestep != timestep and neuron.always_update:
-                neuron.update(timestep)
+            n = self.neurons[neuron]
+            if n.step_counter != step_conuter and n.always_update:
+                n.update(step_conuter)

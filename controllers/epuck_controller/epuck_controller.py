@@ -1,40 +1,9 @@
 import math
 import random
-
 import neural.NeuralNetwork as NN
 from epuck_basic import EpuckBasic
 
-
-class cmd():
-    #commands
-    forward = 1
-    stop = 3
-    turn_right = 4
-    turn_left = 5
-    soft_turn_left = 5
-    soft_turn_right = 6
-    unknown = 7
-
-
-def cmd_name(c):
-    if c == cmd.forward: return "Forward"
-    if c == cmd.stop: return "stop"
-    if c == cmd.turn_left: return "turn_left"
-    if c == cmd.turn_right: return "turn_right"
-    if c == cmd.soft_turn_left: return "soft_turn_left"
-    if c == cmd.soft_turn_right: return "soft_turn_right"
-    if c == cmd.unknown: return "unknown"
-
-
-class action():
-    retrive = 1
-    search = 1
-
-
-class MapObject():
-    def __init__(self, color, moveable):
-        self.color = color
-        self.moveable = moveable
+sensors = ["fmr", "fr", "r", "br", "bl", "l", "fl", "fml"]
 
 
 class EpuckController(EpuckBasic):
@@ -42,77 +11,180 @@ class EpuckController(EpuckBasic):
     light_threshold = 0.1
     stagnation_threshold = 0.001
 
-    def __init__(self,
-                 tempo=1.0,
-                 e_thresh=125,
-                 nvect=True,
-                 cvect=True,
-                 svect=True,
-                 band='bw',
-                 concol=1.0,
-                 snapshow=True,
-                 ann_cycles=1,
-                 agent_cycles=5,
-                 act_noise=0.1,
-                 tfile="redman4"):
+    avoid_weight = 4
+    food_weight = 0.5
+    robot_weight = 3
+    robot_found_weight = 1
+
+    wander_time = 150
+    wander_frequence = 1.0/2000.0
+
+    def __init__(self):
         EpuckBasic.__init__(self)
         self.basic_setup() # defined for EpuckBasic
-        self.dist_val = []
-        self.light_val = []
-        self.last_data = None
-        self.current_cmd = cmd.stop
-        self.suggested_cmd = cmd.stop
-        self.mode = self.search
-        self.counter = 0
-        self.stagnation_count = 100 + 300 * random.random()
-        self.distNN = NN.NeuralNetwork([[2, 2, 0, 0, 0, 0, -2, -2], [-2, -2, 0, 0, 0, 0, 2, 2]])
-        self.ligthNN = NN.NeuralNetwork([[-1, -1, -1, -1, 1, 1, 1, 1], [1, 1, 1, 1, -1, -1, -1, -1]])
-        self.botNN = NN.NeuralNetwork([
-            [3, 2, 2, -1, -1, -2, -2, -3],
-            [-3, -2, -2, -1, -1, 2, 2, 3],
-            [0, 0, -1, 2, 2, -1, 0, 0]
-        ])
 
-    def update_sensors(self):
-        self.dist_val = [((0 if math.isnan(x) or x < self.dist_threshold else x) / 4096) for x in
-                         self.get_proximities()]
-        self.light_val = [((0 if math.isnan(x) else x) / 4200) for x in self.get_lights()]
-        # fix to get lights in the same order as proximity
-        lights_order = [4, 5, 6, 7, 0, 1, 2, 3]
-        self.light_val = [self.light_val[x] for x in lights_order]
+        self.counter = 0
+        self.neuralNet = NN.NeuralNetwork()
+
+        for i in range(self.num_dist_sensors):
+            self.neuralNet.append(name="ds-" + sensors[i], post_update=self.dist_pre_update, data=self.dist_sensors[i])
+
+        for i in range(self.num_light_sensors):
+            self.neuralNet.append(name="ls-" + sensors[i], post_update=self.light_pre_update,
+                                  data=self.light_sensors[i])
+
+        for i in range(8):
+            self.neuralNet.append(name="c-" + str(i), post_update=self.cam_pre_update, data=i)
+
+        self.greens = [x for x in range(8)]
+        self.update_cam = self.cam_update_rate
+
+        self.neuralNet.append(name="avoid-r", weights={
+            "ds-fl": 2,
+            "ds-fml": 2,
+            "ds-fmr": -2,
+            "ds-fr": -2
+        })
+
+        self.neuralNet.append(name="avoid-l", weights={
+            "ds-fl": -2,
+            "ds-fml": -2,
+            "ds-fmr": 2,
+            "ds-fr": 2
+        })
+
+        self.neuralNet.append(name="food-r", weights={
+            "ls-fmr": -1,
+            "ls-fr": -1,
+            "ls-r": -1,
+            "ls-br": -1,
+            "ls-bl": 1,
+            "ls-l": 1,
+            "ls-fl": 1,
+            "ls-fml": 1
+        })
+
+        self.neuralNet.append(name="food-l", weights={
+            "ls-fmr": 1,
+            "ls-fr": 1,
+            "ls-r": 1,
+            "ls-br": 1,
+            "ls-bl": -1,
+            "ls-l": -1,
+            "ls-fl": -1,
+            "ls-fml": -1
+        })
+        self.neuralNet.append(name="robot-l", weights={
+            "c-0": 3,
+            "c-1": 2,
+            "c-2": 2,
+            "c-3": -1,
+            "c-4": -1,
+            "c-5": -2,
+            "c-6": -2,
+            "c-7": -3,
+        })
+
+        self.neuralNet.append(name="robot-r", weights={
+            "c-0": -3,
+            "c-1": -2,
+            "c-2": -2,
+            "c-3": -1,
+            "c-4": -1,
+            "c-5": 2,
+            "c-6": 2,
+            "c-7": 3,
+        })
+
+        self.neuralNet.append(name="robot-found", pre_update=self.robot_found_preupdate, weights={
+            "c-0": -self.robot_found_weight,
+            "c-1": self.robot_found_weight,
+            "c-2": self.robot_found_weight,
+            "c-3": self.robot_found_weight,
+            "c-4": self.robot_found_weight,
+            "c-5": self.robot_found_weight,
+            "c-6": self.robot_found_weight,
+            "c-7": -self.robot_found_weight,
+        })
+
+        self.neuralNet.append(name="left", pre_update=self.wheel_pre_update, weights={
+            "avoid-l": self.avoid_weight,
+            "food-l": self.food_weight,
+            "robot-l": self.robot_weight,
+            "robot-found": 0
+        }, post_update=self.wheel_post_update, data=0, always_update=True)
+
+        self.neuralNet.append(name="right", pre_update=self.wheel_pre_update, weights={
+            "avoid-r": self.avoid_weight,
+            "food-r": self.food_weight,
+            "robot-r": self.robot_weight,
+            "robot-found": 0
+        }, post_update=self.wheel_post_update, data=1, always_update=True)
+        self.speed = [0, 0]
+        self.wander = 0
+
+    def dist_pre_update(self, neuron):
+        x = neuron.data.getValue()
+        neuron.output = 0 if math.isnan(x) or x < self.dist_threshold else x / 4096
+
+    def light_pre_update(self, neuron):
+        x = neuron.data.getValue()
+        neuron.output = 0 if math.isnan(x) else x / 4200
+
+    def cam_pre_update(self, neuron):
+        #update camera greens array
+        if self.update_cam >= self.cam_update_rate:
+            self.update_cam = 0
+            self.greens = self.get_camera_greens()
+
+        neuron.output = self.greens[neuron.data]
+
+    def wheel_pre_update(self, neuron):
+        #if left wheel
+        #else right wheel
+        if self.wander <= 0:
+            if random.random() < self.wander_frequence:
+                print ("Wandering of",self.getName())
+                avoid = self.avoid_weight
+                food = 0
+                robot = 0
+                self.wander = self.wander_time
+            else:
+                found = neuron.inputs["robot-found"].neuron.output
+                avoid = max(0, self.avoid_weight - 3*self.avoid_weight * found)
+                robot = max(0, self.robot_weight - self.robot_weight * found)
+                food = self.food_weight + 4*found
+                # if self.getName() == "e-puck1":
+                #     print("found",found,"avoid",avoid,"robot",robot,"food",food)
+
+            if neuron.data == 0:
+                neuron.inputs["avoid-l"].weight = avoid
+                neuron.inputs["robot-l"].weight = robot
+                neuron.inputs["food-l"].weight = food
+            else:
+                neuron.inputs["avoid-r"].weight = avoid
+                neuron.inputs["robot-r"].weight = robot
+                neuron.inputs["food-r"].weight = food
+        else:
+            self.wander -= 1
+
+    def wheel_post_update(self, neuron):
+        self.speed[neuron.data] = neuron.output
+
+    def robot_found_preupdate(self, neuron):
+        neuron.memory = min(0.99, max(0,neuron.output)**1.9)
+        return
 
     def run(self):
         self.set_leds(1)
-        update_cam = self.cam_update_rate
-        bot_speed = [0, 0, 0]
-        companion = False
+        step_counter = 0
         while True:
-            self.update_sensors()
+            # self.update_sensors()
+            self.update_cam += 1
+            step_counter += 1
 
-            if update_cam == self.cam_update_rate:
-                greens = self.get_camera_greens()
-                update_cam = 0
-                bot_speed = self.botNN.update(greens)
-            else:
-                update_cam += 1
-            # self.check_mode()
-            # self.suggested_cmd = self.mode()
-
-            #print(greens)
-            speed = self.distNN.update(self.dist_val)
-            light_speed = self.ligthNN.update(self.light_val)
-            print(bot_speed[2])
-            if bot_speed[2] > 0.8 and not companion:
-                print "I love you"
-                companion = True
-                self.set_wheel_speeds(0, 0)
-            elif companion and bot_speed[2] > 0.7:
-                print ("Waiting for you love")
-            else:
-                self.set_wheel_speeds(min(1, 1 - bot_speed[0]), min(1, 1 - bot_speed[1]))
-            # self.set_wheel_speeds(min(1, 1 - 1 * light_speed[0], 1 - 2 * speed[0]),
-            #                       min(1, 1 - 1 * light_speed[1], 1 - 2 * speed[1]))
-            # self.do_suggested()
+            self.neuralNet.update(step_counter)
+            self.set_wheel_speeds(max(-1,min(1 - 2*self.speed[0], 1)), max(-1,min(1 - 2*self.speed[1], 1)))
 
             if self.step(self.timestep) == -1: break
 
@@ -128,94 +200,5 @@ class EpuckController(EpuckBasic):
         return greens
 
 
-    def check_mode(self):
-        if self.mode == self.stagnation: return
-        self.mode = self.search
-        #itererer over distanse og sjekker om man er intil et objekt,
-        # sjekker ogsaa om det lyser fra objektet
-        for i in range(0, self.num_dist_sensors):
-            if self.dist_val[i] > self.dist_threshold and self.light_val[i] > self.light_threshold:
-                self.mode = self.retrieval
-                break
-
-        #sjekker om det har skjedd none endringer de siste rundene
-        if self.last_data and self.mode == self.retrieval:
-            fl = self.dist_val[0] - self.last_data[0]
-            fr = self.dist_val[7] - self.last_data[1]
-
-            if self.dist_val[2] + self.dist_val[5] < self.dist_threshold:
-                self.counter += 1
-                if self.counter > self.stagnation_count:
-                    print("Staggnation:", self.counter)
-                    self.stagnation_count = 100 + 300 * random.random()
-                    self.counter = 0
-                    self.mode = self.stagnation
-
-        self.last_data = [self.dist_val[0], self.dist_val[7]]
-
-    def search(self):
-        c = self.get_light_cmd()
-        return c if c != cmd.unknown else self.get_dist_cmd()
-
-    def retrieval(self):
-        c = self.get_light_cmd()
-        return c if c != cmd.unknown else cmd.forward
-
-    def stagnation(self):
-        self.backward()
-        self.turn_left() if random.random() < 0.5 else self.turn_right()
-        self.forward(1, 2)
-        self.mode = self.search
-        return cmd.forward
-
-    def get_light_cmd(self):
-        left = sum(self.light_val[:4])
-        right = sum(self.light_val[4:])
-        diff = left - right
-        if abs(diff) > self.light_threshold:
-            if left < right:
-                return cmd.soft_turn_left
-            else:
-                return cmd.soft_turn_right
-
-        return cmd.unknown
-
-    def get_dist_cmd(self):
-        #Hvis man ikke har registrert nok lys kjores en unngaa vegger ting istede
-        left = sum(self.dist_val[6:8])
-        right = sum(self.dist_val[0:2])
-        if left > self.dist_threshold or right > self.dist_threshold:
-            if left > right and not self.is_last_cmd(cmd.turn_left):
-                return cmd.turn_right
-            elif not self.is_last_cmd(cmd.turn_right):
-                return cmd.turn_left
-        else:
-            return cmd.forward
-
-        return self.current_cmd
-
-    def do_suggested(self):
-        if self.suggested_cmd == self.current_cmd: return
-        # print ("Performing cmd:", cmd_name(self.suggested_cmd))
-        self.current_cmd = self.suggested_cmd
-        c = self.current_cmd
-
-        if c == cmd.forward:
-            self.set_wheel_speeds(1, 1)
-        elif c == cmd.turn_left:
-            self.set_wheel_speeds(-1, 1)
-        elif c == cmd.turn_right:
-            self.set_wheel_speeds(1, -1)
-        elif c == cmd.soft_turn_left:
-            self.set_wheel_speeds(0.2, 1)
-        elif c == cmd.soft_turn_right:
-            self.set_wheel_speeds(1, 0.2)
-        else:
-            self.set_wheel_speeds(0, 0)
-
-    def is_last_cmd(self, command):
-        return command == self.current_cmd
-
-
-controller = EpuckController(tempo=1.0, band='gray')
+controller = EpuckController()
 controller.run()

@@ -7,8 +7,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation -0.999663 -0.0239516 -0.00999696 0.79104
-  position -0.0391175 2.53696 2.2508
+  orientation -1 4.12271e-09 3.46064e-09 1.4908
+  position -0.0542955 3.58158 0.223319
 }
 Background {
   skyColor [
@@ -62,6 +62,7 @@ EPuck {
   translation 0.393761 -6.39511e-05 -0.0419309
   rotation -0.000415035 1 0.000651165 1.99753
   controller "epuck_controller"
+  name "e-puck1"
   camera_windowPosition 0.0635559 0.547306
   camera_width 16
   camera_height 16
