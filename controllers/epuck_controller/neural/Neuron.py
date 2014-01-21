@@ -12,10 +12,11 @@ class Neuron:
         self.output = 0
 
     def update(self):
+        self.x *= 0.5
         for input in self.inputs:
             self.x += input.neuron.output * input.weight
 
-        self.output = 1 / (1 + math.exp(-self.x))
+        self.output = 2 / (1 + math.exp(-self.x)) - 1
         return self.output
 
 

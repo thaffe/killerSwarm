@@ -165,6 +165,12 @@ DEF short_rock_4 Solid {
   translation -1.11774e-17 0.0498937 -1.29086e-17
   rotation 4.67736e-17 1 -1.2396e-17 -0.915365
   children [
+    PointLight {
+      color 1 0 0
+      intensity 0.275
+      location 0 0.3 0
+      castShadows TRUE
+    }
     Shape {
       appearance Appearance {
         material Material {

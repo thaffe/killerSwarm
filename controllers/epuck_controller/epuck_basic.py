@@ -2,7 +2,6 @@ import time                # A Python primitive module
 import math                #   "            "
 
 import Image               # An extra Python module (that you'll have to download)
-
 from controller import *   # controller comes with Webots
 
 
@@ -31,11 +30,12 @@ class EpuckBasic(DifferentialWheels):
     max_wheel_speed = 1000
     num_dist_sensors = 8
     num_light_sensors = 8
-    num_leds = 8
+    num_leds = 9
     encoder_resolution = 159.23 # for wheel encoders
     tempo = 0.5  # Upper velocity bound = Fraction of the robot's maximum velocity = 1000 = 1 wheel revolution/sec
     wheel_diameter = 4.1 # centimeters
     axle_length = 5.3 # centimeters
+    cam_update_rate = 3
 
     # Final 4 slots not used in Webots but included for use with physical epucks that are not driven by Webots.
     max_spin_rate = tempo * (wheel_diameter / axle_length)
@@ -51,8 +51,8 @@ class EpuckBasic(DifferentialWheels):
         self.timestep = int(self.getBasicTimeStep()) # Fetched from WorldInfo.basicTimeStep (in the Webots world)
         self.tempo = tempo
         self.enableEncoders(self.timestep)
-        #self.camera = self.getCamera('camera')
-        #self.camera.enable(4*self.timestep)
+        self.camera = self.getCamera('camera')
+        self.camera.enable(self.cam_update_rate*self.timestep)
         #print "Camera width: " , self.camera.getWidth()
         self.dist_sensor_values = [0 for i in range(self.num_dist_sensors)]
         self.dist_sensors = [self.getDistanceSensor('ps' + str(x)) for x in
