@@ -1,5 +1,6 @@
 import math
 
+
 class Neuron:
 
     output = 0
