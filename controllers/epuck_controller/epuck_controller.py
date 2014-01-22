@@ -1,13 +1,16 @@
 import math
 import random
+
 from controller import *
 import neural.NeuralNetwork as NN
+
 
 #sensor names
 sensors = ["fmr", "fr", "r", "br", "bl", "l", "fl", "fml"]
 
 
 class EpuckController(DifferentialWheels):
+    dist_threshold = 200
     #robots constants
     num_dist_sensors = 8
     num_light_sensors = 8
@@ -17,19 +20,19 @@ class EpuckController(DifferentialWheels):
 
     #Neural nets constants
     avoid_weight = 4
-    food_weight = 0.5
+    food_weight = 0.4
     robot_weight = 3
     robot_found_weight = 1
 
     wander_time = 150
-    wander_frequence = 1.0/2000.0
+    wander_frequence = 1.0 / 1500.0
 
     def __init__(self):
         DifferentialWheels.__init__(self)
 
         self.timestep = int(self.getBasicTimeStep())
         self.camera = self.getCamera('camera')
-        self.camera.enable(self.cam_update_rate*self.timestep)
+        self.camera.enable(self.cam_update_rate * self.timestep)
         self.leds = [self.getLED("led" + str(x)) for x in range(self.num_leds)]
 
         self.speed = [0, 0]
@@ -39,13 +42,13 @@ class EpuckController(DifferentialWheels):
         self.neuralNet = NN.NeuralNetwork()
 
         for i in range(self.num_dist_sensors):
-            sensor = self.getDistanceSensor("ps"+str(i))
+            sensor = self.getDistanceSensor("ps" + str(i))
             sensor.enable(self.timestep)
             self.neuralNet.append(name="ds-" + sensors[i], post_update=self.dist_pre_update,
                                   data=sensor)
 
         for i in range(self.num_light_sensors):
-            sensor = self.getLightSensor("ls"+str(i))
+            sensor = self.getLightSensor("ls" + str(i))
             sensor.enable(self.timestep)
             self.neuralNet.append(name="ls-" + sensors[i], post_update=self.light_pre_update,
                                   data=sensor)
@@ -124,18 +127,31 @@ class EpuckController(DifferentialWheels):
             "c-7": -self.robot_found_weight,
         })
 
+        self.neuralNet.append(name="surrounded", weights={
+            "ds-fmr": 1,
+            "ds-fr": 1,
+            "ds-r": 1,
+            "ds-br": 1,
+            "ds-bl": 1,
+            "ds-l": 1,
+            "ds-fl": 1,
+            "ds-fml": 1
+        })
+
         self.neuralNet.append(name="left", pre_update=self.wheel_pre_update, weights={
             "avoid-l": self.avoid_weight,
             "food-l": self.food_weight,
             "robot-l": self.robot_weight,
-            "robot-found": 0
+            "robot-found": 0,
+            "surrounded": 0
         }, post_update=self.wheel_post_update, data=0, always_update=True)
 
         self.neuralNet.append(name="right", pre_update=self.wheel_pre_update, weights={
             "avoid-r": self.avoid_weight,
             "food-r": self.food_weight,
             "robot-r": self.robot_weight,
-            "robot-found": 0
+            "robot-found": 0,
+            "surrounded": 0
         }, post_update=self.wheel_post_update, data=1, always_update=True)
 
     def dist_pre_update(self, neuron):
@@ -158,17 +174,17 @@ class EpuckController(DifferentialWheels):
         #if left wheel
         #else right wheel
         if self.wander <= 0:
-            if random.random() < self.wander_frequence:
-                print ("Wandering of",self.getName())
+            if random.random() < self.wander_frequence and neuron.inputs["surrounded"].neuron.output < 0.9:
+                print ("Wandering of", self.getName())
                 avoid = self.avoid_weight
                 food = 0
                 robot = 0
                 self.wander = self.wander_time
             else:
                 found = neuron.inputs["robot-found"].neuron.output
-                avoid = max(0, self.avoid_weight - 3*self.avoid_weight * found)
+                avoid = max(0, self.avoid_weight - 3 * self.avoid_weight * found)
                 robot = max(0, self.robot_weight - self.robot_weight * found)
-                food = self.food_weight + 4*found
+                food = self.food_weight + 4 * found
                 # if self.getName() == "e-puck1":
                 #     print("found",found,"avoid",avoid,"robot",robot,"food",food)
 
@@ -187,7 +203,7 @@ class EpuckController(DifferentialWheels):
         self.speed[neuron.data] = neuron.output
 
     def robot_found_preupdate(self, neuron):
-        neuron.memory = min(0.99, max(0,neuron.output)**1.9)
+        neuron.memory = min(0.99, max(0, neuron.output) ** 1.9)
         return
 
     def run(self):
@@ -200,8 +216,8 @@ class EpuckController(DifferentialWheels):
 
             self.neuralNet.update(step_counter)
             self.setSpeed(
-                self.max_speed*max(-1,min(1 - 2*self.speed[0], 1)),
-                self.max_speed*max(-1,min(1 - 2*self.speed[1], 1))
+                self.max_speed * max(-1, min(1 - 2 * self.speed[0], 1)),
+                self.max_speed * max(-1, min(1 - 2 * self.speed[1], 1))
             )
 
             if self.step(self.timestep) == -1: break
@@ -216,11 +232,12 @@ class EpuckController(DifferentialWheels):
                     255 * 6) + math.floor(img[x + 1][y][1] / max(1, (img[x + 1][y][0] + img[x + 1][y][2]))) / (255 * 6)
 
         return greens
+
     def set_green_leds(self, value):
         self.leds[8].set(value)
 
-    def set_red_leds(self,value):
-        for i in range(0,7):
+    def set_red_leds(self, value):
+        for i in range(0, 7):
             self.leds[i].set(value)
 
 
