@@ -9,7 +9,7 @@ import neural.NeuralNetwork as NN
 sensors = ["fmr", "fr", "r", "br", "bl", "l", "fl", "fml"]
 
 
-class EpuckController(DifferentialWheels):
+class EpuckController_2box(DifferentialWheels):
     dist_threshold = 200
     #robots constants
     num_dist_sensors = 8
@@ -25,7 +25,7 @@ class EpuckController(DifferentialWheels):
     robot_found_weight = 1
 
     wander_time = 150
-    wander_frequence = 1.0 / 500.0
+    wander_frequence = 1.0 / 1200.0
 
     def __init__(self):
         DifferentialWheels.__init__(self)
@@ -174,10 +174,8 @@ class EpuckController(DifferentialWheels):
         #if left wheel
         #else right wheel
         if self.wander <= 0:
-            surrounded = neuron.inputs["surrounded"].neuron.output
-            # if self.getName() == "e-puck1":
-                # print("Sur",surrounded)
-            if random.random() < self.wander_frequence*(1.1-surrounded)**2 and surrounded < 0.95:
+            surrounded =  neuron.inputs["surrounded"].neuron.output
+            if surrounded < 0.9 and random.random() < self.wander_frequence*(1.1-surrounded)**2:
                 print ("Wandering of", self.getName())
                 avoid = self.avoid_weight
                 food = 0
@@ -188,8 +186,9 @@ class EpuckController(DifferentialWheels):
                 avoid = max(0, self.avoid_weight - 3 * self.avoid_weight * found)
                 robot = max(0, self.robot_weight - self.robot_weight * found)
                 food = self.food_weight + 4 * found
-                # if self.getName() == "e-puck1":
-                #     print("found",found,"avoid",avoid,"robot",robot,"food",food)
+            # if self.getName() == "e-puck1":
+            #     print("found",found,"avoid",avoid,"robot",robot,"food",food)
+
 
             if neuron.data == 0:
                 neuron.inputs["avoid-l"].weight = avoid
@@ -244,5 +243,5 @@ class EpuckController(DifferentialWheels):
             self.leds[i].set(value)
 
 
-controller = EpuckController()
+controller = EpuckController_2box()
 controller.run()

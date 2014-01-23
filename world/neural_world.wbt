@@ -1,0 +1,224 @@
+#VRML_SIM V7.3.0 utf8
+WorldInfo {
+  info [
+    "Description"
+    "Author: first name last name <e-mail>"
+    "Date: DD MMM YYYY"
+  ]
+}
+Viewpoint {
+  orientation -1 4.12271e-09 3.46064e-09 1.4908
+  position -0.0542955 3.58158 0.223319
+}
+Background {
+  skyColor [
+    0.4 0.7 1
+  ]
+}
+DirectionalLight {
+  direction 0 -1 0
+}
+DEF e0 EPuck {
+  translation -0.7 0.1 0.0368421
+  rotation -0.000758301 0.999999 -0.000656973 -1.41874
+  controller "epuck_controller"
+  camera_windowPosition 0.0627514 0.235874
+  camera_width 16
+  camera_height 16
+}
+DEF e1 EPuck {
+  translation -0.478947 0.1 0.184211
+  rotation 0.00200428 0.999998 0.000639933 -0.627277
+  controller "epuck_controller"
+  camera_windowPosition 0.0627514 0.0768725
+  camera_width 16
+  camera_height 16
+}
+DEF e3 EPuck {
+  translation -0.626316 0.1 0.626316
+  rotation 0.000204381 1 -0.000649828 2.5413
+  controller "epuck_controller"
+  camera_windowPosition 0.0627514 0.390933
+  camera_width 16
+  camera_height 16
+}
+DEF e4 EPuck {
+  translation -0.478947 0.1 0.405263
+  rotation -0.000134223 1 4.53673e-05 0.432292
+  controller "epuck_controller"
+  camera_windowPosition 0.0635559 0.704993
+  camera_width 16
+  camera_height 16
+}
+DEF e5 EPuck {
+  translation -0.257895 0.1 0.626316
+  rotation -0.00222033 0.999997 -0.000661573 -0.570035
+  controller "epuck_controller"
+  camera_windowPosition 0.0627514 0.858739
+  camera_width 16
+  camera_height 16
+}
+DEF e6 EPuck {
+  translation -0.478947 0.1 0.331579
+  rotation -0.000415035 1 0.000651165 1.99753
+  controller "epuck_controller"
+  name "e-puck1"
+  camera_windowPosition 0.0635559 0.547306
+  camera_width 16
+  camera_height 16
+}
+DEF e7 EPuck {
+  translation 0.478947 0.1 -0.257895
+  rotation -0.000310093 1 -0.000652595 -2.24528
+  controller "epuck_controller"
+  camera_windowPosition 0.933226 0.0808147
+  camera_width 16
+  camera_height 16
+}
+DEF e2 EPuck {
+  translation -0.405263 0.1 -0.184211
+  rotation -0.000310093 1 -0.000652595 -2.24528
+  controller "epuck_controller"
+  camera_windowPosition 0.933226 0.0808147
+  camera_width 16
+  camera_height 16
+}
+DEF WALL-1 Solid {
+  translation 0 0.1 0.75
+  children [
+    DEF WALL-SHAPE Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 1 0.215686 0.156863
+        }
+      }
+      geometry Box {
+        size 1.5 0.2 0.01
+      }
+    }
+  ]
+  boundingObject Group {
+    children [
+      USE WALL-SHAPE
+    ]
+  }
+}
+DEF WALL-2 Solid {
+  translation 0 0.1 -0.75
+  children [
+    DEF WALL-SHAPE Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 1 0.215686 0.156863
+        }
+      }
+      geometry Box {
+        size 1.5 0.2 0.01
+      }
+    }
+  ]
+  boundingObject Group {
+    children [
+      USE WALL-SHAPE
+    ]
+  }
+}
+DEF WALL-3 Solid {
+  translation 0.75 0.1 0
+  rotation 0 1 0 1.5708
+  children [
+    DEF WALL-SHAPE Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 1 0.215686 0.156863
+        }
+      }
+      geometry Box {
+        size 1.5 0.2 0.01
+      }
+    }
+  ]
+  boundingObject Group {
+    children [
+      USE WALL-SHAPE
+    ]
+  }
+}
+DEF WALL-4 Solid {
+  translation -0.75 0.1 0
+  rotation 0 1 0 1.5708
+  children [
+    DEF WALL-SHAPE Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 1 0.215686 0.156863
+        }
+      }
+      geometry Box {
+        size 1.5 0.2 0.01
+      }
+    }
+  ]
+  boundingObject Group {
+    children [
+      USE WALL-SHAPE
+    ]
+  }
+}
+DEF FLOOR Solid {
+  translation 0 -0.005 0
+  children [
+    DEF FLOOR-SHAPE Shape {
+      appearance Appearance {
+        texture ImageTexture {
+          url [
+            "textures/grid.png"
+          ]
+        }
+        textureTransform TextureTransform {
+          scale 5 5
+        }
+      }
+      geometry Box {
+        size 1.5 0.01 1.5
+      }
+    }
+  ]
+  boundingObject Group {
+    children [
+      USE FLOOR-SHAPE
+    ]
+  }
+}
+DEF FOOD Solid {
+  translation 1.93946e-18 0.0998616 2.71279e-18
+  rotation -0.794445 0.10399 -0.598367 -3.87352e-17
+  children [
+    PointLight {
+      attenuation 1 1 1
+      color 1 0 0
+      intensity 0.275
+      radius 0.01
+      castShadows TRUE
+    }
+    DEF FOOD-SHAPE Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 1 0 0
+          emissiveColor 1 0 0
+        }
+      }
+      geometry Box {
+        size 0.2 0.2 0.2
+      }
+    }
+  ]
+  boundingObject USE FOOD-SHAPE
+  physics Physics {
+    density -1
+    mass 0.35
+  }
+}
+Supervisor {
+  controller "SuperDupervisor"
+}

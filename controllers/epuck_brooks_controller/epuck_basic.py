@@ -2,15 +2,16 @@ import time                # A Python primitive module
 import math                #   "            "
 
 import Image               # An extra Python module (that you'll have to download)
-import imagepro
 
 from controller import *   # controller comes with Webots
-from epuck_controller import EpuckController
+
+
+
 
 
 # This is the basic class for controlling an epuck robot in the Webots simulator.  In theory, the
 # same code can also run a physical epuck robot with just the "flip of a switch" - although there are small
-# differences.  
+# differences.
 
 # The class hierarchy is Robot => DifferentialWheels => epuck_basic, where the superclass, Robot, and
 # DifferentialWheels are written by the Webots people, while we defined epuck_basic.  By inheriting
@@ -29,6 +30,8 @@ from epuck_controller import EpuckController
 class EpuckBasic(DifferentialWheels):
     max_wheel_speed = 1000
     num_dist_sensors = 8
+    num_light_sensors = 8
+    num_leds = 8
     encoder_resolution = 159.23 # for wheel encoders
     tempo = 0.5  # Upper velocity bound = Fraction of the robot's maximum velocity = 1000 = 1 wheel revolution/sec
     wheel_diameter = 4.1 # centimeters
@@ -48,17 +51,18 @@ class EpuckBasic(DifferentialWheels):
         self.timestep = int(self.getBasicTimeStep()) # Fetched from WorldInfo.basicTimeStep (in the Webots world)
         self.tempo = tempo
         self.enableEncoders(self.timestep)
-        self.camera = self.getCamera('camera')
-        self.camera.enable(4 * self.timestep)
-        print ("Camera width: ", self.camera.getWidth())
+        #self.camera = self.getCamera('camera')
+        #self.camera.enable(4*self.timestep)
+        #print "Camera width: " , self.camera.getWidth()
         self.dist_sensor_values = [0 for i in range(self.num_dist_sensors)]
         self.dist_sensors = [self.getDistanceSensor('ps' + str(x)) for x in
                              range(self.num_dist_sensors)]  # distance sensors
         map((lambda s: s.enable(self.timestep)), self.dist_sensors) # Enable all distance sensors
-
-        self.emitter = self.getEmitter("emitter")
-        self.receiver = self.getReceiver("receiver")
-        self.controller = EpuckController()
+        self.light_sensor_values = [0 for i in range(self.num_light_sensors)]
+        self.light_sensors = [self.getLightSensor('ls' + str(x)) for x in
+                              range(self.num_light_sensors)]  # light sensors
+        map((lambda s: s.enable(self.timestep)), self.light_sensors) # Enable all light sensors
+        self.leds = [self.getLED("led" + str(x)) for x in range(self.num_leds)]
 
 
     # **** TIMED ACTION ***
@@ -81,7 +85,7 @@ class EpuckBasic(DifferentialWheels):
         if self.getMode() == 0: # Running the simulator
             self.step(ms_duration)
         else: # Running a real robot
-            print ("Doing timed robot action")
+            print "Doing timed robot action"
             self.step(ms_duration)
             self.stop_moving() # I seem to need this to halt the previous action
             self.step(self.timestep)
@@ -98,7 +102,7 @@ class EpuckBasic(DifferentialWheels):
             self.do_timed_action()
 
     def wait(self, seconds=1.0):
-        print ("waiting")
+        print "waiting"
         time.sleep(seconds)
 
 
@@ -127,7 +131,7 @@ class EpuckBasic(DifferentialWheels):
     # running via the call to do_timed_action.
 
     def move(self, speed=1.0, duration=1.0, dir='forward'):
-        print ("Moving")
+        print "Moving"
         s = min(1.0, abs(speed))
         if dir == 'forward':
             self.set_wheel_speeds(left=s, right=s)
@@ -155,7 +159,7 @@ class EpuckBasic(DifferentialWheels):
     # The arguments "left" and "right" are in the range [-1,1].
 
     def set_wheel_speeds(self, left=0.0, right=0.0):
-        print ("Setting wheel speeds: ", "Left =", left, "  Right = ", right)
+        # print "Setting wheel speeds: ", "Left =", left, "  Right = ", right
         ms = self.tempo * self.max_wheel_speed
         self.setSpeed(int(left * ms), int(right * ms))
 
@@ -227,6 +231,15 @@ class EpuckBasic(DifferentialWheels):
             self.dist_sensor_values[i] = self.dist_sensors[i].getValue()
         return self.dist_sensor_values
 
+    def get_lights(self):
+        for i in range(self.num_light_sensors):
+            self.light_sensor_values[i] = self.light_sensors[i].getValue()
+        return self.light_sensor_values
+
+    def set_leds(self, color, action="blink"):
+        for i in range(self.num_leds):
+            self.leds[i].set(1)
+
 
     # This is the high-level routine for getting camera images; just call it directly from your code and
     # then prepare to deal with the "Image" object that it returns.  This is where you'll need Python's Image module.
@@ -258,36 +271,22 @@ class EpuckBasic(DifferentialWheels):
 
         # Main loop
         while True:
-            #self.braitenburg_avoidance()
+            self.turn_left()
             self.get_proximities()
-            #self.avoid_object()
-            self.controller.update(self.dist_sensor_values, self.snapshot(False))
-            # self.avoid_object()
-            if not self.controller.isLastCmd(self.controller.command):
-                self.set_wheel_speeds(self.controller.l_speed, self.controller.r_speed)
+            self.get_lights()
+            # self.braitenburg_avoidance()
+
 
             # This runs a simulation step of duration 64 milliseconds (simulation time, not real time).
             # The STEP method returns a -1 when the simulation is over.
-            if self.step(self.timestep) == -1: break
+            if self.step(64) == -1: break
 
             # Enter here exit cleanup code
 
             # ****** Accessories ******
 
-    def avoid_object(self):
-        sv = self.dist_sensor_values
-        left = sv[6] + sv[7]
-        right = sv[1] + sv[0]
-        if left > 300 or right > 300:
-            #self.braitenburg_avoidance()
-            if left > right:
-                self.spin_angle(-5)
-            else:
-                self.spin_angle(5)
-        else:
-            self.set_wheel_speeds(1, 1)
+            # This is just some useful and/or fun stuff
 
-    # This is just some useful and/or fun stuff
     def testrun(self):
         self.run_toy()
         self.stop_moving()
@@ -313,7 +312,7 @@ class EpuckBasic(DifferentialWheels):
         command = items[0]
         args = [float(item) for item in items[1:]]
         if command == 'quit':
-            print ("Ending the run.")
+            print "Ending the run."
             return False
         if command == 'forward':
             self.forward(speed=1.0, duration=args[0])
@@ -339,9 +338,9 @@ class EpuckBasic(DifferentialWheels):
             help += "   snap - Shows the camera image.\n"
             help += "   wait <duration in seconds> - robot does nothing for the specified period \n"
             help += "   quit - Quit this program.\n"
-            print (help)
+            print help
         else:
-            print ("Unknown command")
+            print "Unknown command"
         return True
 
     # An action script is read from a file and then interpreted, line by line.  Each line will
@@ -357,23 +356,23 @@ class EpuckBasic(DifferentialWheels):
 
     def run_toy(self):
         result = True
-        print ("Enter robot commands.  Type 'help for the command list and 'quit to stop")
+        print "Enter robot commands.  Type 'help for the command list and 'quit to stop"
         while result:
-            print ("Command: ")
+            print "Command: "
             command = raw_input()
             result = self.interp_command(command)
 
 
-# *** MAIN ****
+            # *** MAIN ****
 
-# This creates an instance of your EpuckBasic subclass, launches its
-# function(s) and destroys it at the end of the execution.
-# Note that only one instance of Robot should be created in
-# a controller program.  This code (or something like it) should only appear
-# here (uncommented) if this is the HIGHEST-LEVEL epuck controller.  If you create subclass S
-# from epuck_basic, then you should include similar code that: a) creates, b) initializes, and c) runs
-# your controller at the bottom of the file for S.
+            # This creates an instance of your EpuckBasic subclass, launches its
+            # function(s) and destroys it at the end of the execution.
+            # Note that only one instance of Robot should be created in
+            # a controller program.  This code (or something like it) should only appear
+            # here (uncommented) if this is the HIGHEST-LEVEL epuck controller.  If you create subclass S
+            # from epuck_basic, then you should include similar code that: a) creates, b) initializes, and c) runs
+            # your controller at the bottom of the file for S.
 
-controller = EpuckBasic()
-controller.basic_setup()
-controller.continuous_run()
+            #controller = EpuckBasic()
+            #controller.basic_setup()
+            #controller.continuous_run()

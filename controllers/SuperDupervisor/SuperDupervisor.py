@@ -34,33 +34,9 @@ class SuperDupervisor (Supervisor):
 
         f.setSFVec3f([1.4* pos[0]/19-0.7, 0.1, 1.4 * pos[1]/19 - 0.7])
         poses[pos[0]][pos[1]] = True
-        print([1.5* pos[0]/19-0.75, 1.5 * pos[1]/19 - 0.75, 0.1])
 
 
 
-    print self.getFromDef("e")
-
-    # You should insert a getDevice-like function in order to get the
-    # instance of a device of the robot. Something like:
-    #  led = self.getLed('ledname')
-    
-    # Main loop
-    while True:
-      # Perform a simulation step of 64 milliseconds
-      # and leave the loop when the simulation is over
-      if self.step(64) == -1:
-        break
-      
-      # Read the sensors:
-      # Enter here functions to read sensor data, like:
-      #  val = ds.getValue()
-      
-      # Process sensor data here.
-      
-      # Enter here functions to send actuator commands, like:
-      #  led.set(1)
-    
-    # Enter here exit cleanup code
 
 # The main program starts from here
 
