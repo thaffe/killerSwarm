@@ -196,7 +196,7 @@ DEF FOOD Solid {
   children [
     PointLight {
       attenuation 1 1 1
-      color 1 0 0
+      color 0 0 1
       intensity 0.275
       radius 0.01
       castShadows TRUE
@@ -204,8 +204,8 @@ DEF FOOD Solid {
     DEF FOOD-SHAPE Shape {
       appearance Appearance {
         material Material {
-          diffuseColor 1 0 0
-          emissiveColor 1 0 0
+          diffuseColor 0 0 1
+          emissiveColor 0 0 1
         }
       }
       geometry Box {
@@ -225,7 +225,7 @@ DEF FOOD Solid {
   children [
     PointLight {
       attenuation 1 1 1
-      color 1 0 0
+      color 0 0 1
       intensity 0.275
       radius 0.01
       castShadows TRUE
@@ -233,8 +233,8 @@ DEF FOOD Solid {
     DEF FOOD-SHAPE Shape {
       appearance Appearance {
         material Material {
-          diffuseColor 1 0 0
-          emissiveColor 1 0 0
+          diffuseColor 0 0 1
+          emissiveColor 0 0 1
         }
       }
       geometry Box {

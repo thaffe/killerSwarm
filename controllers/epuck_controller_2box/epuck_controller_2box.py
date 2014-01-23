@@ -9,7 +9,7 @@ import neural.NeuralNetwork as NN
 sensors = ["fmr", "fr", "r", "br", "bl", "l", "fl", "fml"]
 
 
-class EpuckController_2box(DifferentialWheels):
+class EpuckController(DifferentialWheels):
     dist_threshold = 200
     #robots constants
     num_dist_sensors = 8
@@ -25,7 +25,7 @@ class EpuckController_2box(DifferentialWheels):
     robot_found_weight = 1
 
     wander_time = 150
-    wander_frequence = 1.0 / 1200.0
+    wander_frequence = 1.0 / 500.0
 
     def __init__(self):
         DifferentialWheels.__init__(self)
@@ -40,6 +40,8 @@ class EpuckController_2box(DifferentialWheels):
 
         self.counter = 0
         self.neuralNet = NN.NeuralNetwork()
+
+        self.team = random.random() >= 0.5
 
         for i in range(self.num_dist_sensors):
             sensor = self.getDistanceSensor("ps" + str(i))
@@ -56,7 +58,7 @@ class EpuckController_2box(DifferentialWheels):
         for i in range(8):
             self.neuralNet.append(name="c-" + str(i), post_update=self.cam_pre_update, data=i)
 
-        self.greens = [x for x in range(8)]
+        self.camera_teammates = [x for x in range(8)]
         self.update_cam = self.cam_update_rate
 
         self.neuralNet.append(name="avoid-r", weights={
@@ -103,7 +105,7 @@ class EpuckController_2box(DifferentialWheels):
             "c-5": -2,
             "c-6": -2,
             "c-7": -3,
-        })
+            })
 
         self.neuralNet.append(name="robot-r", weights={
             "c-0": -3,
@@ -114,7 +116,7 @@ class EpuckController_2box(DifferentialWheels):
             "c-5": 2,
             "c-6": 2,
             "c-7": 3,
-        })
+            })
 
         self.neuralNet.append(name="robot-found", pre_update=self.robot_found_preupdate, weights={
             "c-0": -self.robot_found_weight,
@@ -125,7 +127,7 @@ class EpuckController_2box(DifferentialWheels):
             "c-5": self.robot_found_weight,
             "c-6": self.robot_found_weight,
             "c-7": -self.robot_found_weight,
-        })
+            })
 
         self.neuralNet.append(name="surrounded", weights={
             "ds-fmr": 1,
@@ -163,19 +165,21 @@ class EpuckController_2box(DifferentialWheels):
         neuron.output = 0 if math.isnan(x) else x / 4200
 
     def cam_pre_update(self, neuron):
-        #update camera greens array
+        #update camera_teammates array
         if self.update_cam >= self.cam_update_rate:
             self.update_cam = 0
-            self.greens = self.get_camera_greens()
+            self.camera_teammates = self.get_camera_teammates()
 
-        neuron.output = self.greens[neuron.data]
+        neuron.output = self.camera_teammates[neuron.data]
 
     def wheel_pre_update(self, neuron):
         #if left wheel
         #else right wheel
         if self.wander <= 0:
-            surrounded =  neuron.inputs["surrounded"].neuron.output
-            if surrounded < 0.9 and random.random() < self.wander_frequence*(1.1-surrounded)**2:
+            surrounded = neuron.inputs["surrounded"].neuron.output
+            # if self.getName() == "e-puck1":
+            # print("Sur",surrounded)
+            if random.random() < self.wander_frequence*(1.1-surrounded)**2 and surrounded < 0.95:
                 print ("Wandering of", self.getName())
                 avoid = self.avoid_weight
                 food = 0
@@ -186,9 +190,8 @@ class EpuckController_2box(DifferentialWheels):
                 avoid = max(0, self.avoid_weight - 3 * self.avoid_weight * found)
                 robot = max(0, self.robot_weight - self.robot_weight * found)
                 food = self.food_weight + 4 * found
-            # if self.getName() == "e-puck1":
-            #     print("found",found,"avoid",avoid,"robot",robot,"food",food)
-
+                # if self.getName() == "e-puck1":
+                #     print("found",found,"avoid",avoid,"robot",robot,"food",food)
 
             if neuron.data == 0:
                 neuron.inputs["avoid-l"].weight = avoid
@@ -210,11 +213,16 @@ class EpuckController_2box(DifferentialWheels):
 
     def run(self):
         step_counter = 0
-        self.set_green_leds(1)
+        self.set_green_leds(1) if self.team else self.set_red_leds(1)
         while True:
             # self.update_sensors()
             self.update_cam += 1
             step_counter += 1
+            surrounded = self.neuralNet.neurons["surrounded"].output
+            if surrounded < 0.95 and random.random() < self.team_change_frequence * (1.1 - surrounded**2):
+                self.team = not self.team
+                self.set_red_leds(1 if self.team else 0)
+                self.set_green_leds(0 if self.team else 1)
 
             self.neuralNet.update(step_counter)
             self.setSpeed(
@@ -224,16 +232,19 @@ class EpuckController_2box(DifferentialWheels):
 
             if self.step(self.timestep) == -1: break
 
-    def get_camera_greens(self):
+    def get_camera_teammates(self):
         img = self.camera.getImageArray();
-        greens = [0 for i in range(self.camera.getWidth() / 2)]
+        camera_teammates = [0 for i in range(self.camera.getWidth() / 2)]
+        color_index = 0 if team else 1
         for x in range(0, self.camera.getWidth(), 2):
             col = x / 2
             for y in range(0, self.camera.getHeight()):
-                greens[col] += math.floor(img[x][y][1] / max(1, (img[x][y][0] + img[x][y][2]))) / (
+                camera_teammates[col] += math.floor(img[x][y][1] / max(1, (img[x][y][0] + img[x][y][2]))) / (
                     255 * 6) + math.floor(img[x + 1][y][1] / max(1, (img[x + 1][y][0] + img[x + 1][y][2]))) / (255 * 6)
+                if self.team:
+                    camera_teammates[col] *= 3
 
-        return greens
+        return camera_teammates
 
     def set_green_leds(self, value):
         self.leds[8].set(value)
@@ -243,5 +254,5 @@ class EpuckController_2box(DifferentialWheels):
             self.leds[i].set(value)
 
 
-controller = EpuckController_2box()
+controller = EpuckController()
 controller.run()
