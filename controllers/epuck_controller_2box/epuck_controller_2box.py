@@ -26,6 +26,7 @@ class EpuckController(DifferentialWheels):
 
     wander_time = 150
     wander_frequence = 1.0 / 500.0
+    team_change_frequence = 1.0/1860.0
 
     def __init__(self):
         DifferentialWheels.__init__(self)
@@ -208,7 +209,7 @@ class EpuckController(DifferentialWheels):
         self.speed[neuron.data] = neuron.output
 
     def robot_found_preupdate(self, neuron):
-        neuron.memory = min(0.99, max(0, neuron.output) ** 1.8)
+        neuron.memory = min(0.98, max(0, neuron.output) ** 1.8)
         return
 
     def run(self):
@@ -221,8 +222,8 @@ class EpuckController(DifferentialWheels):
             surrounded = self.neuralNet.neurons["surrounded"].output
             if surrounded < 0.95 and random.random() < self.team_change_frequence * (1.1 - surrounded**2):
                 self.team = not self.team
-                self.set_red_leds(1 if self.team else 0)
-                self.set_green_leds(0 if self.team else 1)
+                self.set_red_leds(0 if self.team else 1)
+                self.set_green_leds(1 if self.team else 0)
 
             self.neuralNet.update(step_counter)
             self.setSpeed(
@@ -235,14 +236,14 @@ class EpuckController(DifferentialWheels):
     def get_camera_teammates(self):
         img = self.camera.getImageArray();
         camera_teammates = [0 for i in range(self.camera.getWidth() / 2)]
-        color_index = 0 if team else 1
+        color_index = 1 if self.team else 0
         for x in range(0, self.camera.getWidth(), 2):
             col = x / 2
             for y in range(0, self.camera.getHeight()):
-                camera_teammates[col] += math.floor(img[x][y][1] / max(1, (img[x][y][0] + img[x][y][2]))) / (
-                    255 * 6) + math.floor(img[x + 1][y][1] / max(1, (img[x + 1][y][0] + img[x + 1][y][2]))) / (255 * 6)
+                camera_teammates[col] += math.floor(img[x][y][color_index] / max(1, (img[x][y][1-color_index] + img[x][y][2]))) / (
+                    255 * 6) + math.floor(img[x + 1][y][color_index] / max(1, (img[x + 1][y][1-color_index] + img[x + 1][y][2]))) / (255 * 6)
                 if self.team:
-                    camera_teammates[col] *= 3
+                    camera_teammates[col] *=1
 
         return camera_teammates
 

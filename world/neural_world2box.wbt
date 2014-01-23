@@ -19,66 +19,66 @@ DirectionalLight {
   direction 0 -1 0
 }
 DEF e0 EPuck {
-  translation 0.331579 0.1 0.7
+  translation 0.405263 0.1 -0.405263
   rotation -0.000758301 0.999999 -0.000656973 -1.41874
-  controller "epuck_controller"
+  controller "epuck_controller_2box"
   camera_windowPosition 0.0627514 0.235874
   camera_width 16
   camera_height 16
 }
 DEF e1 EPuck {
-  translation 0.405263 0.1 -0.478947
+  translation -0.552632 0.1 0.184211
   rotation 0.00200428 0.999998 0.000639933 -0.627277
-  controller "epuck_controller"
+  controller "epuck_controller_2box"
   camera_windowPosition 0.0627514 0.0768725
   camera_width 16
   camera_height 16
 }
 DEF e3 EPuck {
-  translation -0.110526 0.1 0.626316
+  translation -0.331579 0.1 -0.552632
   rotation 0.000204381 1 -0.000649828 2.5413
-  controller "epuck_controller"
+  controller "epuck_controller_2box"
   camera_windowPosition 0.0627514 0.390933
   camera_width 16
   camera_height 16
 }
 DEF e4 EPuck {
-  translation -0.626316 0.1 0.552632
+  translation -0.405263 0.1 0.405263
   rotation -0.000134223 1 4.53673e-05 0.432292
-  controller "epuck_controller"
+  controller "epuck_controller_2box"
   camera_windowPosition 0.0635559 0.704993
   camera_width 16
   camera_height 16
 }
 DEF e5 EPuck {
-  translation -0.478947 0.1 0.184211
+  translation 0.184211 0.1 0.626316
   rotation -0.00222033 0.999997 -0.000661573 -0.570035
-  controller "epuck_controller"
+  controller "epuck_controller_2box"
   camera_windowPosition 0.0627514 0.858739
   camera_width 16
   camera_height 16
 }
 DEF e6 EPuck {
-  translation -0.626316 0.1 0.405263
+  translation 0.405263 0.1 0.478947
   rotation -0.000415035 1 0.000651165 1.99753
-  controller "epuck_controller"
+  controller "epuck_controller_2box"
   name "e-puck1"
   camera_windowPosition 0.0635559 0.547306
   camera_width 16
   camera_height 16
 }
 DEF e7 EPuck {
-  translation -0.552632 0.1 0.626316
+  translation -0.184211 0.1 0.478947
   rotation -0.000310093 1 -0.000652595 -2.24528
-  controller "epuck_controller"
+  controller "epuck_controller_2box"
   camera_windowPosition 0.933226 0.0808147
   camera_width 16
   camera_height 16
 }
 DEF e2 EPuck {
-  translation 0.7 0.1 -0.257895
+  translation -0.331579 0.1 0.7
   rotation -0.000310093 1 -0.000652595 -2.24528
-  controller "epuck_controller"
+  controller "epuck_controller_2box"
   camera_windowPosition 0.933226 0.0808147
   camera_width 16
   camera_height 16
@@ -197,7 +197,7 @@ DEF FOOD Solid {
     PointLight {
       attenuation 1 1 1
       color 0 0 1
-      intensity 0.275
+      intensity 0.6
       radius 0.01
       castShadows TRUE
     }
@@ -226,7 +226,7 @@ DEF FOOD Solid {
     PointLight {
       attenuation 1 1 1
       color 0 0 1
-      intensity 0.275
+      intensity 0.6
       radius 0.01
       castShadows TRUE
     }
