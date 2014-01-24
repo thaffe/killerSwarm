@@ -25,18 +25,17 @@ class EpuckBrooksController(EpuckBasic):
         self.last_data = None
         self.current_cmd = cmd.stop
         self.suggested_cmd = cmd.stop
-        self.mode = self.search
         self.counter = 0
         self.stagnation_count = 100 + 200 * random.random()
         self.layers = [self.search, self.retrieval, self.stagnation]
         self.is_retriving = False
+        self.lights_order = [4, 5, 6, 7, 0, 1, 2, 3]
 
     def update_sensors(self):
         self.dist_val = [((0 if math.isnan(x) else x) / 4096) for x in self.get_proximities()]
         self.light_val = [((0 if math.isnan(x) else x) / 4096) for x in self.get_lights()]
-        # fix to get lights in the same order as proximity
-        lights_order = [4, 5, 6, 7, 0, 1, 2, 3]
-        self.light_val = [self.light_val[x] for x in lights_order]
+        # get lights in the same order as proximity
+        self.light_val = [self.light_val[x] for x in self.lights_order]
 
     def run(self):
         while True:

@@ -17,3 +17,6 @@ class NeuralNetwork:
             n = self.neurons[neuron]
             if n.step_counter != step_conuter and n.always_update:
                 n.update(step_conuter)
+
+    def set_weight(self, neuron_name, input_name, weight):
+        self.neurons[neuron_name].inputs[input_name].weight = weight
